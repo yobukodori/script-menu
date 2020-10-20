@@ -1,0 +1,20 @@
+.item {
+	padding : 0.1em 0.5em 0;
+}
+
+.item:hover {
+	background-color: #87cefa;
+}
+/*
+body.pc {
+	font-size: large;
+}
+
+body.mobile {
+	font-size: 15px;
+}
+
+button {
+	font-size: inherit;
+}
+*/

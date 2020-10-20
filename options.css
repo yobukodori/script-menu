@@ -1,0 +1,45 @@
+body{
+	background-color: #f7f7f7;
+}
+
+body.pc {
+	font-size: large;
+}
+
+body.mobile {
+	font-size: 15px;
+}
+
+textarea {
+	font-size: inherit;
+}
+
+button {
+	font-size: inherit;
+	padding: 0.1em 0.5em;
+}
+
+.text-box {
+	border-style: solid;
+	padding: 0px 5px 5px;
+	border-width: thin;
+}
+
+#scriptsResource {
+	width: 100%;
+	white-space: pre;
+	-moz-tab-size: 4;
+}
+
+.button-area{
+	margin-top: 5px;
+}
+
+span.error {
+	background-color: pink;
+	font-weight: bold;
+}
+
+span.warning {
+	background-color: yellow;
+}

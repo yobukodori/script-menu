@@ -2,9 +2,7 @@
 ## Select and run the registered JavaScript from the menu. Using browser.tabs.executeScript API.
 ## 登録したJavaScritをメニューから選択して実行するFirefox拡張機能。tabs.executeScript APIを使用します。
 ![screenshot](https://yobukodori.github.io/freedom/image/script-menu-screenshot-02.jpg)
-<!--
 ### Script Menu is available on [AMO](https://addons.mozilla.org/firefox/addon/script-menu/).
--->
 ### Usage
 ![screenshot](https://yobukodori.github.io/freedom/image/script-menu-screenshot-01.jpg)
 - **Print debug info**:  Output debug information at the bottom of the Options tab.  

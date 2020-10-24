@@ -49,6 +49,15 @@ Internally convert it to the following code and execute it.
           alert("hello");
         })();
         ```
+  1. Prepared the following built-in scripts for Fenix.  
+        ```
+        //name View Page Source    
+        //js  
+        builtin:view-page-source  
+        //name View (Selected) outerHTML
+        //js  
+        builtin:view-outerhtml
+        ```
 - **Save**: Save settings and scripts resource. And apply settings and scripts.
 - **Apply**: Apply settings and scripts. (doesn't save).
 - **Get Status**: get current status and applied scripts.

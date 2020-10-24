@@ -11,6 +11,16 @@
 The //name directive specifies the script name to be displayed on the menu.  
         ```
         //name Go page top
+        ```
+  1. The //matches directive specifies a comma-separated list of URL patterns for the pages where you want to display the script name. (Optional)  
+        ```
+        //matches https://*.github.io/*, https://github.com/*
+        ```
+  1. The //excludes directive specifies a comma-separated list of URL patterns for the pages where you don't want to display the script name. (Optional)  
+  The //excludes directive has a higher priority than the //matches directive.  
+        ```
+        //excludes https//yobukodori.github.io/*, https//github.com/yobukodori/*
+        ```
   1. Next, use the //options directive to set [details](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/tabs/executeScript). (Optional)  
         ```
         //options  

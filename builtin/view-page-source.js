@@ -1,9 +1,10 @@
 (function(){
 	let a = document.createElement("a");
-	a.setAttribute("style","position:fixed;top:0;right:0;padding:0.5em 1em;background-color:lightgray;border:solid;");
-	a.addEventListener("click",ev=>{
-		a.remove();
-	});
+	let is_pc = ! navigator.userAgent.includes("Android"),
+		position = is_pc ? " top:0; right:0;" : " top:50%; left:50%; transform: translate(-50%,-50%);";
+	a.setAttribute("style", "position:fixed;" + position + " padding:0.5em 1em; font-size:large; background-color:#ffff88; border:solid; z-index:2147483647");
+	a.addEventListener("click", ev=> a.remove());
+	document.addEventListener("click", ev => a.remove());
 	a.href = "javascript:void(0)";
 	a.textContent = "Requesting html";
 	document.body.appendChild(a);

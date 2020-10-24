@@ -1,9 +1,15 @@
 var my = {
 	os : "n/a", // mac|win|android|cros|linux|openbsd
 	defaultTitle: "Script Menu",
+	initialized: false,
 	debug: false,
 	scriptsResource: "",
 	scripts: [],
+	errors: [],
+	//====================================================
+    error : function(msg, where) {
+		my.errors.push({message: msg, where: where});
+	},
 	//====================================================
     init : function(platformInfo) 
 	{
@@ -16,7 +22,9 @@ var my = {
         browser.storage.local.get(["printDebugInfo", "scriptsResource"])
         .then((pref) => {
 			my.updateSettings(pref);
-        });
+			my.initialized = true;
+        })
+		.catch(err => my.error(err, "storage.local.get"));
 
 		browser.runtime.onMessage.addListener(my.onMessage);
     },
@@ -35,6 +43,18 @@ var my = {
 				else {
 					my.scriptsResource = pref.scriptsResource;
 					my.scripts = res.scripts;
+					my.scripts.forEach(s=>{
+						if (s.matches){
+							s.matchesRegExp = new RegExp(s.matches.map(pattern=>{
+								return "(" + convertMatchPatternToRegExpLiteral(pattern) + ")";
+							}).join("|"));
+						}
+						if (s.excludes){
+							s.excludesRegExp = new RegExp(s.excludes.map(pattern=>{
+								return "(" + convertMatchPatternToRegExpLiteral(pattern) + ")";
+							}).join("|"));
+						}
+					});
 				}
 				my.log('Scripts changed');
 			}
@@ -49,24 +69,34 @@ var my = {
 	onMessage : function(message, sender, sendResponse)
 	{
 		if (message.type === "getStatus"){
-			browser.runtime.sendMessage({
-				type: "status",
-				"status": {
-					debug: my.debug,
-					scriptsResource: my.scriptsResource,
-					scripts: my.scripts
-				}
+			sendResponse({
+				debug: my.debug,
+				scriptsResource: my.scriptsResource,
+				scripts: my.scripts
 			});
 		}
-		else if (message.type === "syncAppliedData"){
-			browser.runtime.sendMessage({
-				type: "syncAppliedData",
-				debug: my.debug,
+		else if (message.type === "getSettings"){
+			sendResponse({
+				initialized: my.initialized,
+				printDebugInfo: my.debug,
 				scriptsResource: my.scriptsResource
+			});
+		}
+		else if (message.type === "getScripts"){
+			sendResponse({
+				scripts: my.scripts
+			});
+		}
+		else if (message.type === "getError"){
+			sendResponse({
+				error: my.errors
 			});
 		}
 		else if (message.type === "updateSettings"){
 			my.updateSettings(message.pref);
+		}
+		else if (message.type === "executeScript"){
+			my.executeScript(message.itemIndex);
 		}
 	},
 	executeScript: function (scriptIndex){
@@ -99,7 +129,6 @@ var my = {
 			browser.tabs.executeScript(details)
 			.then(value=>{
 				if (my.debug){ my.log("# executed successfully") }
-				browser.tabs.create({url:"data:text/plain;charset=utf-8;base64,"+btoa("hello")});
 			})
 			.catch(err=>{
 				my.log("Error (then-catch): " + err);

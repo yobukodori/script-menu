@@ -1,20 +1,29 @@
+.item, #settings, .log, .error {
+	border-style: none none solid;
+	border-width: thin;
+	border-color: silver;
+}
+
 .item {
-	padding : 0.1em 0.5em 0;
+	padding : 0.3em 0.5em 0.2em;
+	cursor: default;
 }
 
 .item:hover {
 	background-color: #87cefa;
 }
-/*
-body.pc {
-	font-size: large;
+
+#settings {
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	cursor: pointer;
+	margin: 0;
+	padding:  0 0.5em;
 }
 
-body.mobile {
-	font-size: 15px;
+.gear-emoji {
+	margin-right: 0.2em;
+	font-size: x-large;
 }
 
-button {
-	font-size: inherit;
-}
-*/

@@ -1,3 +1,34 @@
+function alert(msg){
+	const id = "alert";
+	let e = document.getElementById(id);
+	if(! e){
+		e = document.createElement("div");
+		e.id = id;
+		document.addEventListener("click", ev=> e.remove());
+		document.body.appendChild(e);
+	}
+	let m = document.createElement("div");
+	m.classList.add("message");
+	msg.split("\n").forEach((line,i) =>{
+		if (i > 0){ m.appendChild(document.createElement("br")); }
+		let span = document.createElement("span");
+		span.appendChild(document.createTextNode(line));
+		m.appendChild(span);
+	});
+	e.appendChild(m);
+}
+
+function clearLog()
+{
+	let log = document.querySelector('#log');
+	log.innerHTML = "";
+	log.appendChild(document.createElement("span"));
+}
+
+function verbose(){
+	return document.querySelector('#printDebugInfo').checked;
+}
+
 let dummy_log_cleared;
 
 function log(s)
@@ -42,10 +73,11 @@ function applySettings(fSave)
 			return;
 		}
 		scripts = res.scripts;
-		if (document.querySelector('#printDebugInfo').checked){
+		if (verbose()){
 			for (let i = scripts.length - 1 ; i >= 0 ; i--){
-				let s = scripts[i];
-				log("scripts["+i+"]: " + scriptToString(s,200));
+				log((i === 0 ? "----------\n" : "") 
+					+ "scripts["+i+"] " + scriptToString(scripts[i], 200)
+					+ "\n----------");
 			};
 		}
 	}
@@ -62,42 +94,43 @@ function applySettings(fSave)
 			log("Settings and Scripts Resource saved.");
 		})
 		.catch(e=>{
-			log("Error (storage.local.set): " + e);
+			alert("Error (storage.local.set): " + e);
 		});
 	}
-	log("Applying settings and" + (scripts.length > 0 ? "" : " removing") +  " scripts.");
+	log("Applying settings and" + (scripts.length > 0 ? " " + scripts.length : " removing") +  " scripts.");
 	browser.runtime.sendMessage({type:"updateSettings",pref:pref});
 }
-
-let g_is_android = navigator.userAgent.indexOf('Android') > 0,	g_is_pc = ! g_is_android;
 
 function onMessage(m, sender, sendResponse)
 {
 	if (m.type === "log"){
 		log(m.str);
 	}
-	else if (m.type === "status"){
-		let status = m["status"];
-		for (let i = status.scripts.length - 1 ; i >= 0 ; i--){
-			let s = status.scripts[i];
-			log((s.error ? "Error " : "") + "scripts[" + i + "]: " 
-				+ (s.error ? s.error + '\n' : "") + scriptToString(s, 100));
-		};
-		log("debug:" + status.debug + " scripts:" + status.scripts.length);
-	}
-	else if (m.type === "syncAppliedData"){
-        document.querySelector('#printDebugInfo').checked = m.debug;
-		document.querySelector('#scriptsResource').value = m.scriptsResource;
-	}
 }
+
 
 function getBackgroundStatus()
 {
-	browser.runtime.sendMessage({type: "getStatus"});
+	browser.runtime.sendMessage({type: "getStatus"})
+	.then(status=>{
+		if (verbose()){
+			for (let i = status.scripts.length - 1 ; i >= 0 ; i--){
+				let s = status.scripts[i];
+				log((i === 0 ? "----------\n" : "") 
+					+ (s.error ? "Error " : "") + "scripts[" + i + "]: " 
+					+ (s.error ? s.error + '\n' : "") + scriptToString(s)
+					+ "\n----------");
+			};
+		}
+		log("debug:" + status.debug + " scripts:" + status.scripts.length);
+	})
+	.catch (err=>{
+		alert("Error on getStatus: " + err);
+	});
 }
 
-function onDOMContentLoaded()
-{
+function onDOMContentLoaded(platformInfo){
+	let os = platformInfo.os, is_mobile = os === "android", is_pc = ! is_mobile;
 	document.querySelector("#scriptsResource").addEventListener('keydown', ev=>{
 		if (ev.key == 'Tab') {
 			ev.preventDefault();
@@ -116,11 +149,13 @@ function onDOMContentLoaded()
 	document.querySelector('#getStatus').addEventListener('click', ev=>{
 		getBackgroundStatus();
 	});
+	document.querySelector('#clearLog').addEventListener('click', ev=>{
+		clearLog();
+	});
 
-	let e = document.querySelectorAll("body, input, textarea, button, #log");
-	for (let i = 0 ; i < e.length ; i++){
-		e[i].classList.add(g_is_pc ? "pc" : "mobile");
-	}
+	document.querySelectorAll("body, input, textarea, button, #log").forEach(e=>{
+		e.classList.add(is_pc ? "pc" : "mobile");
+	});
 	document.getElementById("scriptsResource").placeholder = ''
 		+ '//name Go top\n'
 		+ '//js\n'
@@ -134,9 +169,29 @@ function onDOMContentLoaded()
 		+ '})();'
 		;
 
-	browser.runtime.sendMessage({type: "syncAppliedData"});
-	log("");
+	getBackgroundStatus();
+	browser.runtime.sendMessage({type: "getSettings"})
+	.then(v=>{
+		if (v.initialized){
+			document.querySelector('#printDebugInfo').checked = v.printDebugInfo;
+			document.querySelector('#scriptsResource').value = v.scriptsResource;
+		}
+		else {
+			alert("Error on getSettings: background is not initialized. See log.");
+			browser.runtime.sendMessage({type: "getError"})
+			.then(v=>{
+				v.error.forEach(e=>{
+					log("Error in background: " + e.message + " on " + e.where);
+				});
+			});
+		}
+	})
+	.catch(err=>{
+		alert("Error on getSettings: " + err);
+	});
 }
 
-document.addEventListener('DOMContentLoaded', onDOMContentLoaded);
 browser.runtime.onMessage.addListener(onMessage);
+document.addEventListener('DOMContentLoaded', ev=>{
+	browser.runtime.getPlatformInfo().then(onDOMContentLoaded);
+});

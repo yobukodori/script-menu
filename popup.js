@@ -74,68 +74,69 @@ function onDOMContentLoaded(platformInfo, activeTabs){
 		e.classList.add(is_pc ? "pc" : "mobile");
 	});
 	
-	let menu = document.querySelector('#menu');
-	if (activeTabs.length > 0){
-		let tab = activeTabs[0];
-		if (/^(https?|file):/.test(tab.url)){
-			let url = tab.url;
-			try {
-				// not work with ftp(s).
-				let u = new URL(url);
-				url = u.protocol + "//" + u.hostname + u.pathname + u.search;
-			} catch(e){}
-			browser.runtime.sendMessage({type: "getScripts"})
-			.then(res =>{
-				if (res.scripts.length > 0){
-					res.scripts.forEach((s,i)=>{
-						if (s.matchesRegExp && ! url.match(s.matchesRegExp)){ return; }
-						if (s.excludesRegExp && url.match(s.excludesRegExp)){ return; }
-						let item = document.createElement("div");
-						item.index = i;
-						item.classList.add("item");
-						item.textContent = s.name;
-						item.addEventListener("click", ev=>{
-							browser.runtime.sendMessage({type: "executeScript", itemIndex: item.index})
-							.then(()=>{ setTimeout(window.close, 0); })
-							.catch(err => error(err + " on runtime.sendMessage"));
-						});
-						menu.appendChild(item);
+	if (activeTabs.length === 0){
+		error("Could not get the active tab.");
+		activeTabs.push({url: "https://./"});
+	}
+	let tab = activeTabs[0];
+	if (/^(https?|file):/.test(tab.url)){
+		let url = tab.url;
+		try {
+			// not work with ftp(s).
+			let u = new URL(url);
+			url = u.protocol + "//" + u.hostname + u.pathname + u.search;
+		} catch(e){}
+		browser.runtime.sendMessage({type: "getScripts"})
+		.then(res =>{
+			if (res.scripts.length > 0){
+				res.scripts.forEach((s,i)=>{
+					if (s.matchesRegExp && ! url.match(s.matchesRegExp)){ return; }
+					if (s.excludesRegExp && url.match(s.excludesRegExp)){ return; }
+					let item = document.createElement("div");
+					item.index = i;
+					item.classList.add("item");
+					item.textContent = s.name;
+					item.addEventListener("click", ev=>{
+						browser.runtime.sendMessage({type: "executeScript", itemIndex: item.index})
+						.then(()=>{ setTimeout(window.close, 0); })
+						.catch(err => error(err + " on runtime.sendMessage"));
 					});
-				}
-				else {
-					error("No registered script.");
-				}
-			});
-		}
-		else {
-			error("Not support special tabs.");
-		}
+					document.querySelector('#menu').appendChild(item);
+				});
+			}
+			else {
+				error("No registered script.");
+			}
+		})
+		.catch(err=>{
+			error(err + ' on sendMessage({type: "getScripts"}');
+		});
 	}
 	else {
-		error("No active tab");
+		error("Not support special tabs.");
 	}
 }
 
-browser.tabs.query({active:true, currentWindow:true})
-.then(tabs=>{
-	browser.runtime.sendMessage({type: "getSettings"})
-	.then(res=>{
-		if (res.initialized && res.printDebugInfo){
-			tabs.forEach((tab,i)=>{
-				log("tabs["+i+"] " + JSON.stringify(tab));
-			});
-		}
-	});
+document.addEventListener('DOMContentLoaded', ev=>{
 	browser.runtime.getPlatformInfo()
 	.then(platformInfo =>{
-		if (document.readyState === "loading"){
-			document.addEventListener('DOMContentLoaded', ev=>{
-				onDOMContentLoaded(platformInfo, tabs);
+		browser.tabs.query({active:true, currentWindow:true})
+		.then(tabs=>{
+			browser.runtime.sendMessage({type: "getSettings"})
+			.then(res=>{
+				if (res.initialized && res.printDebugInfo){
+					tabs.forEach((tab,i)=>{
+						log("tabs["+i+"] " + JSON.stringify(tab));
+					});
+				}
 			});
-		}
-		else {
 			onDOMContentLoaded(platformInfo, tabs);
-		}
+		})
+		.catch(err =>{
+			error(err + " on tabs.query");
+			onDOMContentLoaded(platformInfo, []);
+		});
 	});
-})
-.catch(err => error(err + " on tabs.query"));
+});
+
+

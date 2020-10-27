@@ -66,18 +66,15 @@ Internally convert it to the following code and execute it.
         //name Obsolete script
         //disable
         //js  
-        ...  
+        (function(){/* code */})();  
         //==========================
         //name Beautify the page  
-        //matches *://abitdirtypage.com/*  
         //# comment
-        ...  
         (function(){/* code */})();  
         //---------------------------  
-        //; comment  
         //eof  
         //##########################
-        //matches *://leavemealone.com/*  
+        //name Some script
         ```
 - **Save**: Save settings and scripts resource. And apply settings and scripts.
 - **Apply**: Apply settings and scripts. (doesn't save).

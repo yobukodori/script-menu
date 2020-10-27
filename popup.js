@@ -26,7 +26,8 @@ function error(msg){
 	function output(msg){
 		let e = document.createElement("div");
 		e.classList.add("error");
-		e.appendChild(document.createTextNode("Error: " + msg));
+		msg = (/^error:/i.test(msg) ? "" : "Error: ") + msg;
+		e.appendChild(document.createTextNode(msg));
 		document.body.insertBefore(e, document.body.firstElementChild);
 	}
 	if (errorMsgBuffer.length > 0){
@@ -76,22 +77,26 @@ function onDOMContentLoaded(platformInfo, activeTabs){
 	
 	if (activeTabs.length === 0){
 		error("Could not get the active tab.");
-		activeTabs.push({url: "https://./"});
+		activeTabs.push({url: ""});
 	}
 	let tab = activeTabs[0];
-	if (/^(https?|file):/.test(tab.url)){
+	if (! tab.url || /^(https?|file):/.test(tab.url)){
 		let url = tab.url;
-		try {
-			// not work with ftp(s).
-			let u = new URL(url);
-			url = u.protocol + "//" + u.hostname + u.pathname + u.search;
-		} catch(e){}
+		if (url){
+			try {
+				// not work with ftp(s).
+				let u = new URL(url);
+				url = u.protocol + "//" + u.hostname + u.pathname + u.search;
+			} catch(e){}
+		}
 		browser.runtime.sendMessage({type: "getScripts"})
 		.then(res =>{
 			if (res.scripts.length > 0){
 				res.scripts.forEach((s,i)=>{
-					if (s.matchesRegExp && ! url.match(s.matchesRegExp)){ return; }
-					if (s.excludesRegExp && url.match(s.excludesRegExp)){ return; }
+					if (url){
+						if (s.matchesRegExp && ! url.match(s.matchesRegExp)){ return; }
+						if (s.excludesRegExp && url.match(s.excludesRegExp)){ return; }
+					}
 					let item = document.createElement("div");
 					item.index = i;
 					item.classList.add("item");

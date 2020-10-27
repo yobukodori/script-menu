@@ -107,22 +107,25 @@ function parseScriptsResource(scriptsResource)
 		name: {
 			required: true,
 			has: "value",
+			followingDirectives: ["disable", "matches", "excludes", "options", "js"],
+		},
+		disable: {
 			followingDirectives: ["matches", "excludes", "options", "js"],
 		},
 		matches: {
 			has: "value",
 			type: "comma separated",
-			followingDirectives: ["excludes", "options", "js"],
+			followingDirectives: ["disable", "excludes", "options", "js"],
 		},
 		excludes: {
 			has: "value",
 			type: "comma separated",
-			followingDirectives: ["matches", "options", "js"],
+			followingDirectives: ["disable", "matches", "options", "js"],
 		},
 		options: {
 			has: "code",
 			type: "json",
-			followingDirectives: ["matches", "excludes", "js"],
+			followingDirectives: ["disable", "matches", "excludes", "js"],
 		},
 		js: {
 			closeScript: true,
@@ -178,6 +181,9 @@ function parseScriptsResource(scriptsResource)
 				if (res.error){
 					break;
 				}
+				if (script.disable){
+					res.scripts.pop();
+				}
 				script = null;
 			}
 			if (w.name === "eof")
@@ -206,6 +212,9 @@ function parseScriptsResource(scriptsResource)
 			}
 			else if (rule.has === "code"){
 				script[rule.name] = [];
+			}
+			else {
+				script[rule.name] = true;
 			}
 		}
 		else if (w.type === "code"){

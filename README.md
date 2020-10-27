@@ -58,6 +58,27 @@ Internally convert it to the following code and execute it.
         //js  
         builtin:view-outerhtml
         ```
+  1. Other directives. (Optional)  
+  **//disable**: disable this script. In case you don't use the script but want to keep it.  
+  **//eof**: Ignore the lines that follow.    
+  **//[-=*;#]**: Comment line.    
+        ```
+        //name Obsolete script
+        //disable
+        //js  
+        ...  
+        //==========================
+        //name Beautify the page  
+        //matches *://abitdirtypage.com/*  
+        //# comment
+        ...  
+        (function(){/* code */})();  
+        //---------------------------  
+        //; comment  
+        //eof  
+        //##########################
+        //matches *://leavemealone.com/*  
+        ```
 - **Save**: Save settings and scripts resource. And apply settings and scripts.
 - **Apply**: Apply settings and scripts. (doesn't save).
 - **Get Status**: get current status and applied scripts.

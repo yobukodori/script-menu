@@ -73,8 +73,11 @@ Internally convert it to the following code and execute it.
         (function(){/* code */})();  
         //---------------------------  
         //eof  
-        //##########################
-        //name Some script
+        #############################  
+        [memo]
+        ...
+        [todo]
+        ...
         ```
 - **Save**: Save settings and scripts resource. And apply settings and scripts.
 - **Apply**: Apply settings and scripts. (doesn't save).

@@ -138,10 +138,32 @@ document.addEventListener('DOMContentLoaded', ev=>{
 			onDOMContentLoaded(platformInfo, tabs);
 		})
 		.catch(err =>{
+			let tabs = [];
 			error(err + " on tabs.query");
-			onDOMContentLoaded(platformInfo, []);
+			try {
+				browser.tabs.executeScript({code: "document.location.href"})
+				.then(result=>{
+					if (typeof result[0] === "undefined"){
+						error("result[0] is undefined");
+					}
+					else if (! result[0].match){
+						error("result[0] must have property 'match'. typeof result[0]: "+typeof result[0]);
+					}
+					else {
+						log("result[0]: "+result[0]);
+						tabs.push({url: result[0]});
+					}
+					onDOMContentLoaded(platformInfo, tabs);
+				})
+				.catch(err=>{
+					error(err + " on executeScript.catch");
+					onDOMContentLoaded(platformInfo, tabs);
+				});
+			}
+			catch(err){
+				error(err + " on try{executeScript}catch");
+				onDOMContentLoaded(platformInfo, tabs);
+			}
 		});
 	});
 });
-
-

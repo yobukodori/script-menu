@@ -1,7 +1,7 @@
 {
 	"manifest_version" : 2,
 	"name": "Script Menu",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"author": "yobukodori",
 	"description": "Select and run the registered JavaScript from the menu.",
 
@@ -10,8 +10,9 @@
 	},
 
 	"permissions" : [
-		"activeTab",
-		"storage"
+		"tabs",
+		"storage",
+		"<all_urls>"
 	],
 
 	"background" : {

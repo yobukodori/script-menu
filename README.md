@@ -51,6 +51,20 @@ Internally convert it to the following code and execute it.
           alert("hello");
         })();
         ```
+  1. Simply write the URL and you can inject the script.  
+        ```
+        //js  
+        https://yobukodori.github.io/foo.js  
+        ```
+        Internally convert it to the following code and execute it.  
+        ```
+        (function() {  
+          let script = document.createElement("script");  
+          script.src = "https://yobukodori.github.io/foo.js";  
+          document.documentElement.appendChild(script);  
+          script.remove();  
+        })();  
+        ```
   1. Prepared the following built-in scripts for Fenix.  
         ```
         //name View Page Source    

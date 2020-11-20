@@ -81,16 +81,16 @@ Internally convert it to the following code and execute it.
         ```
         //name Obsolete script
         //disable
-        //js  
-        (function(){/* code */})();  
+        //js
+        (function(){/* code */})();
         //==========================
-        //name Beautify the page  
+        //name Beautify the page
         //# comment
-	//js
-        (function(){/* code */})();  
-        //---------------------------  
-        //eof  
-        #############################  
+        //js
+        (function(){/* code */})();
+        //---------------------------
+        //eof
+        #############################
         [memo]
         ...
         [todo]

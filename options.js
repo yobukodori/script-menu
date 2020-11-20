@@ -82,6 +82,7 @@ function applySettings(fSave)
 		}
 	}
 	let pref = {
+		inPageMenu : document.querySelector('#inPageMenu').checked,
 		printDebugInfo : document.querySelector('#printDebugInfo').checked,
 		scriptsResource : scriptsResource
 	};
@@ -170,24 +171,20 @@ function onDOMContentLoaded(platformInfo){
 		;
 
 	getBackgroundStatus();
+
 	browser.runtime.sendMessage({type: "getSettings"})
 	.then(v=>{
-		if (v.initialized){
+		if (v.error){
+			alert("Error on getSettings: " + v.error);
+		}
+		else {
+			document.querySelector('#inPageMenu').checked = v.inPageMenu;
 			document.querySelector('#printDebugInfo').checked = v.printDebugInfo;
 			document.querySelector('#scriptsResource').value = v.scriptsResource;
 		}
-		else {
-			alert("Error on getSettings: background is not initialized. See log.");
-			browser.runtime.sendMessage({type: "getError"})
-			.then(v=>{
-				v.error.forEach(e=>{
-					log("Error in background: " + e.message + " on " + e.where);
-				});
-			});
-		}
 	})
 	.catch(err=>{
-		alert("Error on getSettings: " + err);
+		alert("Error on sendMessage('getSettings'): " + err);
 	});
 }
 

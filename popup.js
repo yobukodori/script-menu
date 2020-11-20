@@ -104,7 +104,7 @@ function onDOMContentLoaded(platformInfo, activeTabs){
 					item.addEventListener("click", ev=>{
 						browser.runtime.sendMessage({type: "executeScript", itemIndex: item.index})
 						.then(()=>{ setTimeout(window.close, 0); })
-						.catch(err => error(err + " on runtime.sendMessage"));
+						.catch(err => error(err + " on executeScript"));
 					});
 					document.querySelector('#menu').appendChild(item);
 				});

@@ -1,36 +1,51 @@
 var my = {
 	os : "n/a", // mac|win|android|cros|linux|openbsd
 	defaultTitle: "Script Menu",
-	initialized: false,
+	initialized: null,
 	debug: false,
+	inPageMenu: false,
 	scriptsResource: "",
 	scripts: [],
-	errors: [],
-	//====================================================
-    error : function(msg, where) {
-		my.errors.push({message: msg, where: where});
-	},
 	//====================================================
     init : function(platformInfo) 
 	{
-		let man = browser.runtime.getManifest();
-		if (man.browser_action && man.browser_action.default_title){
-			my.defaultTitle = man.browser_action.default_title;
-		}
-		my.os = platformInfo.os;
+		my.initialized = new Promise((resolve, reject)=>{
+			try {
+				let man = browser.runtime.getManifest();
+				if (man.browser_action && man.browser_action.default_title){
+					my.defaultTitle = man.browser_action.default_title;
+				}
+				my.os = platformInfo.os;
 
-        browser.storage.local.get(["printDebugInfo", "scriptsResource"])
-        .then((pref) => {
-			my.updateSettings(pref);
-			my.initialized = true;
-        })
-		.catch(err => my.error(err, "storage.local.get"));
-
-		browser.runtime.onMessage.addListener(my.onMessage);
+				browser.runtime.onMessage.addListener(my.onMessage);
+				
+				browser.storage.local.get(["inPageMenu", "printDebugInfo", "scriptsResource"])
+				.then((pref) => {
+					my.updateSettings(pref);
+					resolve();
+				})
+				.catch(err=>{
+					reject(err);
+				});
+			}
+			catch(e){
+				reject(e.message);
+			}
+		});
     },
 	//====================================================
 	updateSettings : function(pref)
 	{
+		let prevInPageMenu = my.inPageMenu;
+		if ((my.inPageMenu = pref.inPageMenu || false) !== prevInPageMenu){
+			if (my.inPageMenu){
+				let filters = {url: [ {schemes: ["http", "https", "file"]} ]};
+				browser.webNavigation.onDOMContentLoaded.addListener(this.onDOMContentLoaded, filters);
+			}
+			else {
+				browser.webNavigation.onDOMContentLoaded.removeListener(this.onDOMContentLoaded);
+			}
+		}
 		my.debug = pref.printDebugInfo || false;
 		if (typeof pref.scriptsResource === "string"){
 			if (pref.scriptsResource !== my.scriptsResource){
@@ -38,7 +53,7 @@ var my = {
 				if (res.error){
 					my.scriptsResource = "";
 					my.scripts = [];
-					my.log("error" + (res.line > 0 ? " line " + res.line : "") + ": " + res.error);
+					my.log("Error" + (res.line > 0 ? " line " + res.line : "") + ": " + res.error);
 				}
 				else {
 					my.scriptsResource = pref.scriptsResource;
@@ -76,20 +91,30 @@ var my = {
 			});
 		}
 		else if (message.type === "getSettings"){
-			sendResponse({
-				initialized: my.initialized,
-				printDebugInfo: my.debug,
-				scriptsResource: my.scriptsResource
-			});
+			if (my.initialized){
+				my.initialized.then(()=>{
+					sendResponse({
+						inPageMenu: my.inPageMenu,
+						printDebugInfo: my.debug,
+						scriptsResource: my.scriptsResource
+					});
+				})
+				.catch(err=>{
+					sendResponse({
+						error: err,
+					});
+				});
+				return true;
+			}
+			else {
+				sendResponse({
+					error: "background.js has not been initialized yet.",
+				});
+			}
 		}
 		else if (message.type === "getScripts"){
 			sendResponse({
 				scripts: my.scripts
-			});
-		}
-		else if (message.type === "getError"){
-			sendResponse({
-				error: my.errors
 			});
 		}
 		else if (message.type === "updateSettings"){
@@ -99,6 +124,24 @@ var my = {
 			my.executeScript(message.itemIndex);
 		}
 	},
+	//====================================================
+	onDOMContentLoaded : function(details)
+	{
+		let execDetails = {file: "in-page-menu.js"};
+		try {
+			browser.tabs.executeScript(details.tabId, execDetails)
+			.then(value=>{
+				if (my.debug){ my.log("# in-page-menu.js executed successfully") }
+			})
+			.catch(err=>{
+				my.log("Error (then-catch): " + err + " on in-page-menu.js");
+			});
+		}
+		catch(err){
+			my.log("Error (try-catch): " + err.message + " on in-page-menu.js");
+		}
+	},
+	//====================================================
 	executeScript: function (scriptIndex){
 		let s = my.scripts[scriptIndex];
 		if (my.debug){my.log("# executing [" + s.name + "]");}
@@ -108,6 +151,17 @@ var my = {
 			details.file = "builtin/" + code.trim().substring("builtin:".length) + ".js";
 			if (my.debug){my.log("# using builtin script: " + details.file);}
 			showResultInTab = true;
+		}
+		else if (/^https?:/.test(code.trim())){
+			let src = code.trim().match(/^(https?:\S*)/)[1];
+			if (my.debug){my.log("# loading exteranl script using a script tag: " + src);}
+			let name = "_" + Math.random().toString().substring(2,10);
+			code = '(function(){'
+			+ 'let ' + name + ' = document.createElement("script");'
+			+ '' + name + '.src="' + src + '";'
+			+ 'document.documentElement.appendChild(' + name + '); ' + name + '.remove();'
+			+ '})()';
+			details.code = code;
 		}
 		else {
 			if (typeof details.wrapCodeInScriptTag !== "undefined"){
@@ -121,9 +175,11 @@ var my = {
 					+ '})()';
 				}
 				if (my.debug){my.log("# deleting details.wrapCodeInScriptTag");}
-				delete details.wrapCodeInScriptTag;
 			}
 			details.code = code;
+		}
+		if (typeof details.wrapCodeInScriptTag !== "undefined"){
+			delete details.wrapCodeInScriptTag;
 		}
 		try {
 			browser.tabs.executeScript(details)

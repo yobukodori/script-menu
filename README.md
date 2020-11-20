@@ -86,6 +86,7 @@ Internally convert it to the following code and execute it.
         //==========================
         //name Beautify the page  
         //# comment
+	//js
         (function(){/* code */})();  
         //---------------------------  
         //eof  

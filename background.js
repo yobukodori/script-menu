@@ -72,6 +72,15 @@ var my = {
 					});
 				}
 				my.log('Scripts changed');
+				browser.tabs.query({url:["http://*/*", "https://*/*", "file://*/*"]})
+				.then(tabs=>{
+					tabs.forEach(tab=>{
+						if (my.debug){ my.log("tabs.sendMessage " + tab.id + ' ' + tab.url); }
+						browser.tabs.sendMessage(tab.id, {type: "scriptsChanged", scripts: my.scripts})
+						.then(res=>{ if (my.debug){ my.log("tabs.sendMessage "+tab.id+" success"); } })
+						.catch(err=>{my.log("Error: " + err + " on tabs.sendMessage " + tab.id);});
+					});
+				});
 			}
 		}
 	},

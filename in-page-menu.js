@@ -41,9 +41,8 @@
 		menu.insertBefore(item, menu.firstElementChild);
 	}
 	let items = [];
-	let menuId = "fmsm-menu";
+	let btnId = "fmsm-menu-button", menuId = "fmsm-menu";
 	function createMenuButton(){
-		let btnId = "fmsm-menu-button";
 		if (document.getElementById(btnId)){ return; }
 		let btn = document.createElement("button");
 		btn.id = btnId;
@@ -88,27 +87,53 @@
 			document.body.appendChild(menu);
 		});
 	}
-	browser.runtime.sendMessage({type: "getScripts"})
-	.then(res =>{
-		res.scripts.forEach((s,i)=>{
+	
+	document.addEventListener("click", ev=>{
+		let menu = document.getElementById(menuId);
+		if (menu){
+			menu.remove();
+			createMenuButton();
+		}
+	});
+	
+	function initialize(scripts){
+		let menu = document.getElementById(menuId);
+		if (menu){
+			menu.remove();
+		}
+		items = [];
+		scripts.forEach((s,i)=>{
 			if (url){
 				if (s.matchesRegExp && ! url.match(s.matchesRegExp)){ return; }
 				if (s.excludesRegExp && url.match(s.excludesRegExp)){ return; }
 			}
 			items.push({index: i, script: s});
 		});
+		let btn = document.getElementById(btnId);
 		if (items.length > 0){
-			createMenuButton();
-			document.addEventListener("click", ev=>{
-				let menu = document.getElementById(menuId);
-				if (menu){
-					menu.remove();
-					createMenuButton();
-				}
-			});
+			if (! btn){
+				createMenuButton();
+			}
 		}
+		else {
+			if (btn){
+				btn.remove();
+			}
+		}
+	}
+	
+	browser.runtime.sendMessage({type: "getScripts"})
+	.then(res =>{
+		initialize(res.scripts);
 	})
 	.catch(err=>{
 		console.log("Error:", err, 'on sendMessage({type:"getScripts"}');
+	});
+	
+	browser.runtime.onMessage.addListener(m=>{
+		if (m.type === "scriptsChanged"){
+			initialize(m.scripts);
+		}
+		return Promise.resolve({});
 	});
 })();

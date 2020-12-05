@@ -78,7 +78,12 @@ var my = {
 						if (my.debug){ my.log("tabs.sendMessage " + tab.id + ' ' + tab.url); }
 						browser.tabs.sendMessage(tab.id, {type: "scriptsChanged", scripts: my.scripts})
 						.then(res=>{ if (my.debug){ my.log("tabs.sendMessage "+tab.id+" success"); } })
-						.catch(err=>{my.log("Error: " + err + " on tabs.sendMessage " + tab.id);});
+						.catch(err=>{
+							let msg = err.toString();
+							if (msg !== "Error: Could not establish connection. Receiving end does not exist."){
+								my.log("Error: " + err + " on tabs.sendMessage " + tab.id);
+							}
+						});
 					});
 				});
 			}

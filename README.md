@@ -18,10 +18,10 @@ The //name directive specifies the script name to be displayed on the menu.
         ```
         //matches https://*.github.io/*, https://github.com/*
         ```
-  1. The //excludes directive specifies a comma-separated list of URL patterns for the pages where you don't want to display the script name. (Optional)  
-  The //excludes directive has a higher priority than the //matches directive.  
+  1. The //exclude directive specifies a comma-separated list of URL patterns for the pages where you don't want to display the script name. (Optional)  
+  The //exclude directive has a higher priority than the //matches directive.  
         ```
-        //excludes https//yobukodori.github.io/*, https//github.com/yobukodori/*
+        //exclude https//yobukodori.github.io/*, https//github.com/yobukodori/*
         ```
   1. Next, use the //options directive to set [details](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/tabs/executeScript). (Optional)  
         ```
@@ -73,6 +73,30 @@ Internally convert it to the following code and execute it.
         //name View (Selected) outerHTML
         //js  
         builtin:view-outerhtml
+        ```
+  1. //module directive and //require directive  
+  **//module**: Define module.  
+  **//require**: Import module or external script file. Can import multiple modules.    
+        ```
+		//module libA
+		//js
+		function foo(){ console.log("foo"); }
+		function bar(){ console.log("bar"); }
+		//module libB
+		//js
+		function baz(){ console.log("baz"); }
+		//name item-1
+		//require libA
+		//js
+		foo();
+		//name item-2
+		//require libA, libB
+		//js
+		bar(); baz();
+		//name item-3
+		//require https&#x3A;//code.jquery&#x2E;com/jquery-2.2.4.min.js
+		//js
+		console.log(typeof $);
         ```
   1. Other directives. (Optional)  
   **//disable**: disable this script. In case you don't use the script but want to keep it.  

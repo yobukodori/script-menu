@@ -65,7 +65,7 @@ function applySettings(fSave)
 	if (! /\S/.test(scriptsResource)){
 		scriptsResource = "";
 	}
-	let scripts = [];
+	let scripts = [], itemCount = 0, moduleCount = 0;
 	if (scriptsResource){
 		let res = parseScriptsResource(scriptsResource);
 		if (res.error){
@@ -73,6 +73,8 @@ function applySettings(fSave)
 			return;
 		}
 		scripts = res.scripts;
+		itemCount = res.items.length;
+		moduleCount = res.moduleCount;
 		if (verbose()){
 			for (let i = scripts.length - 1 ; i >= 0 ; i--){
 				log((i === 0 ? "----------\n" : "") 
@@ -86,8 +88,8 @@ function applySettings(fSave)
 		printDebugInfo : document.querySelector('#printDebugInfo').checked,
 		scriptsResource : scriptsResource
 	};
-	if (scripts.length === 0){
-		log("warning: All current registered scripts will be removed");
+	if (itemCount === 0){
+		log("warning: All current registered menu items will be removed.");
 	}
 	if (fSave){
 		browser.storage.local.set(pref)
@@ -98,7 +100,10 @@ function applySettings(fSave)
 			alert("Error (storage.local.set): " + e);
 		});
 	}
-	log("Applying settings and" + (scripts.length > 0 ? " " + scripts.length : " removing") +  " scripts.");
+	log("Applying settings" 
+		+ " and" + (itemCount > 0 ? " " + itemCount : " removing") +  " menu items"
+		+ (moduleCount > 0 ? " and applying " + moduleCount + " modules." : ".")
+	);
 	browser.runtime.sendMessage({type:"updateSettings",pref:pref});
 }
 

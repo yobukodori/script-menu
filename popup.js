@@ -89,7 +89,7 @@ function onDOMContentLoaded(platformInfo, activeTabs){
 				url = u.protocol + "//" + u.hostname + u.pathname + u.search;
 			} catch(e){}
 		}
-		browser.runtime.sendMessage({type: "getScripts"})
+		browser.runtime.sendMessage({type: "getMenuItemScripts"})
 		.then(res =>{
 			if (res.scripts.length > 0){
 				res.scripts.forEach((s,i)=>{
@@ -114,7 +114,7 @@ function onDOMContentLoaded(platformInfo, activeTabs){
 			}
 		})
 		.catch(err=>{
-			error(err + ' on sendMessage({type: "getScripts"}');
+			error(err + ' on sendMessage({type: "getMenuItemScripts"}');
 		});
 	}
 	else {

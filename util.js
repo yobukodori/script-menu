@@ -72,9 +72,11 @@ function scriptToString(s, maxCodeLength)
 	if (s.js == null){
 		return "(not script)";
 	}
-	return (s.name != null ? "name: " + (s.name ? s.name : "(untitled)") + "\n" : "")
+	return (s.name ? "name: " + s.name + "\n" : "")
+			+ (s.module ? "module: " + s.module + "\n" : "")
+			+ (s.require ? "require: [" + s.require + "]\n" : "")
 			+ (s.matches ? "matches: [" + s.matches + "]\n" : "")
-			+ (s.excludes ? "excludes: [" + s.excludes + "]\n" : "")
+			+ (s.exclude ? "exclude: [" + s.exclude + "]\n" : "")
 			+ (s.options ? "options: " + JSON.stringify(s.options) + "\n" : "")
 			+ ("js: " + truncate(s.js, maxCodeLength));
 }
@@ -91,47 +93,75 @@ function parseScriptsResource(scriptsResource)
 		let r = s.match(/^\/\/([a-z]\w+)(\s|$)/i);
 		if (r){
 			let name = r[1].toLowerCase(), value = s.substring(r[1].length+2).trim();
+			if (name === "excludes"){
+				name = "exclude";
+			}
 			return {type: "directive", name: name, value: value}; 
 		}
 		return { type: "code" }; 
 	}
-	let res = {error: null, line: 0, scripts: []};
+	let res = {error: null, line: 0, scripts: [], items: [], modules: {}, moduleCount: 0, require: []};
 	if (! isString(scriptsResource)){
 		res.error = "scriptsResource must be string: " + typeof scriptsResource;
 		return res;
 	}
 	let rules = {
 		initial: {
-			followingDirectives: ["name"],
+			followingDirectives: ["name", "module"],
 		},
 		name: {
 			required: true,
+			alt: "module",
 			has: "value",
-			followingDirectives: ["disable", "matches", "excludes", "options", "js"],
+			followingDirectives: ["require", "disable", "matches", "exclude", "options", "js"],
+		},
+		module: {
+			required: true,
+			alt: "name",
+			has: "value",
+			followingDirectives: ["js"],
+		},
+		require: {
+			has: "value",
+			type: "comma separated",
+			followingDirectives: ["disable", "exclude", "options", "js"],
+			onclose: function(val, line){
+				for (let i = 0 ; i < val.length ; i++){
+					let name = val[i];
+					if (/^https?:/.test(name)){
+						try { new URL(name); }
+						catch(e){ return e.message; }
+					}
+					else {
+						res.require.push({name, line});
+					}
+				}
+				return null;
+			},
 		},
 		disable: {
-			followingDirectives: ["matches", "excludes", "options", "js"],
+			followingDirectives: ["require", "matches", "exclude", "options", "js"],
 		},
 		matches: {
 			has: "value",
 			type: "comma separated",
-			followingDirectives: ["disable", "excludes", "options", "js"],
+			followingDirectives: ["require", "disable", "exclude", "options", "js"],
 		},
-		excludes: {
+		exclude: {
 			has: "value",
 			type: "comma separated",
-			followingDirectives: ["disable", "matches", "options", "js"],
+			followingDirectives: ["require", "disable", "matches", "options", "js"],
 		},
 		options: {
 			has: "code",
 			type: "json",
-			followingDirectives: ["disable", "matches", "excludes", "js"],
+			followingDirectives: ["require", "disable", "matches", "exclude", "js"],
 		},
 		js: {
 			closeScript: true,
 			required: true,
 			has: "code",
-			followingDirectives: ["name"],
+			followingDirectives: ["name", "module"],
 		}
 	};
 	Object.keys(rules).forEach(k=>{ rules[k].name = k; });
@@ -167,22 +197,47 @@ function parseScriptsResource(scriptsResource)
 			else if (rule.type === "comma separated"){
 				script[rule.name] = script[rule.name].split(',').map(e=>e.trim()).filter(e=>e.length > 0);
 			}
+			if (rule.onclose){
+				res.error = rule.onclose(script[rule.name], res.line - 1);
+				if (res.error){
+					res.line--;
+					break;
+				}
+			}
 			if (rule.closeScript){
 				Object.keys(rules).forEach(k=>{
 					if (rules[k].required && typeof script[k] === "undefined"){
-						if (typeof rules[k].defaultValue !== "undefined"){
-							script[k] = rules[k].defaultValue;
-						}
-						else {
-							res.error = "//" + k + " is required.";
+						if (! (rules[k].alt && typeof script[rules[k].alt] !== "undefined")){
+							if (typeof rules[k].defaultValue !== "undefined"){
+								script[k] = rules[k].defaultValue;
+							}
+							else {
+								res.error = "//" + k + " is required.";
+							}
 						}
 					}
 				});
 				if (res.error){
 					break;
 				}
-				if (script.disable){
-					res.scripts.pop();
+				if (script.module){
+					if (script.module in res.modules){
+						res.error = "The module name \"" +  script.module + "\" has been multiply defined.";
+						break;
+					}
+					res.modules[script.module] = script.js;
+					res.moduleCount++;
+					res.scripts.push(script);
+				}
+				else {
+					if (/^(builtin|https?):/.test(script.js.trim()) && script.require){
+						res.error = "Scripts starting with builtin:/http(s): cannot use the 'require' directive.";
+						break;
+					}
+					if (! script.disable){
+						res.items.push(script);
+						res.scripts.push(script);
+					}
 				}
 				script = null;
 			}
@@ -197,7 +252,6 @@ function parseScriptsResource(scriptsResource)
 			rule = rules[w.name];
 			if (! script){
 				script = {};
-				res.scripts.push(script);
 			}
 			if (typeof script[rule.name] !== "undefined"){
 				res.error = "//" + rule.name + " has been defined multiple times."
@@ -227,6 +281,16 @@ function parseScriptsResource(scriptsResource)
 		else {
 			res.error = "unknown line type " + w.type;
 			break;
+		}
+	}
+	if (! res.error){
+		for (let i = 0 ; i < res.require.length ; i++){
+			let name = res.require[i].name;
+			if (! (name in res.modules)){
+				res.error = "module \"" + name + "\" is not defined";
+				res.line = res.require[i].line;
+				break;
+			}
 		}
 	}
 	return res;

@@ -122,12 +122,12 @@
 		}
 	}
 	
-	browser.runtime.sendMessage({type: "getScripts"})
+	browser.runtime.sendMessage({type: "getMenuItemScripts"})
 	.then(res =>{
 		initialize(res.scripts);
 	})
 	.catch(err=>{
-		console.log("Error:", err, 'on sendMessage({type:"getScripts"}');
+		console.log("Error:", err, 'on sendMessage({type:"getMenuItemScripts"}');
 	});
 	
 	browser.runtime.onMessage.addListener(m=>{

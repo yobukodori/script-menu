@@ -6,6 +6,8 @@ var my = {
 	inPageMenu: false,
 	scriptsResource: "",
 	scripts: [],
+	items: [],
+	modules: {},
 	//====================================================
     init : function(platformInfo) 
 	{
@@ -52,20 +54,23 @@ var my = {
 				let res = parseScriptsResource(pref.scriptsResource);
 				if (res.error){
 					my.scriptsResource = "";
-					my.scripts = [];
+					my.scripts = my.items = [];
+					my.modules = {};
 					my.log("Error" + (res.line > 0 ? " line " + res.line : "") + ": " + res.error);
 				}
 				else {
 					my.scriptsResource = pref.scriptsResource;
 					my.scripts = res.scripts;
-					my.scripts.forEach(s=>{
+					my.items = res.items;
+					my.modules = res.modules;
+					my.items.forEach(s=>{
 						if (s.matches){
 							s.matchesRegExp = new RegExp(s.matches.map(pattern=>{
 								return "(" + convertMatchPatternToRegExpLiteral(pattern) + ")";
 							}).join("|"));
 						}
-						if (s.excludes){
-							s.excludesRegExp = new RegExp(s.excludes.map(pattern=>{
+						if (s.exclude){
+							s.excludesRegExp = new RegExp(s.exclude.map(pattern=>{
 								return "(" + convertMatchPatternToRegExpLiteral(pattern) + ")";
 							}).join("|"));
 						}
@@ -76,7 +81,7 @@ var my = {
 				.then(tabs=>{
 					tabs.forEach(tab=>{
 						if (my.debug){ my.log("tabs.sendMessage " + tab.id + ' ' + tab.url); }
-						browser.tabs.sendMessage(tab.id, {type: "scriptsChanged", scripts: my.scripts})
+						browser.tabs.sendMessage(tab.id, {type: "scriptsChanged", scripts: my.items})
 						.then(res=>{ if (my.debug){ my.log("tabs.sendMessage "+tab.id+" success"); } })
 						.catch(err=>{
 							let msg = err.toString();
@@ -126,9 +131,9 @@ var my = {
 				});
 			}
 		}
-		else if (message.type === "getScripts"){
+		else if (message.type === "getMenuItemScripts"){
 			sendResponse({
-				scripts: my.scripts
+				scripts: my.items,
 			});
 		}
 		else if (message.type === "updateSettings"){
@@ -156,8 +161,8 @@ var my = {
 		}
 	},
 	//====================================================
-	executeScript: function (scriptIndex){
-		let s = my.scripts[scriptIndex];
+	executeScript: async function (itemIndex){
+		let s = my.items[itemIndex];
 		if (my.debug){my.log("# executing [" + s.name + "]");}
 		let code = s.js, options = s.options || {}, matches = s.matches || [];
 		let details = Object.assign({}, options), showResultInTab;
@@ -178,6 +183,30 @@ var my = {
 			details.code = code;
 		}
 		else {
+			if (s.require){
+				let moduleCode = "";
+				for (let i = 0 ; i < s.require.length ; i++){
+					let moduleName = s.require[i];
+					if (! my.modules[moduleName]){
+						if (my.debug){my.log("# fetching module " + moduleName);}
+						try {
+							my.modules[moduleName] = await fetch(moduleName).then(res=>{
+								if (! res.ok){
+									throw Error(res.status + " " + res.statusText);
+								}
+								return res.text()
+							});
+							if (my.debug){my.log("# fetched successfully");}
+						}
+						catch(err){
+							my.log("Error: " + err.message + " while fetching " + moduleName);
+							return;
+						}
+					}
+					moduleCode += my.modules[moduleName] + "\n";
+				}
+				code = moduleCode + "\n" + code;
+			}
 			if (typeof details.wrapCodeInScriptTag !== "undefined"){
 				if (details.wrapCodeInScriptTag){
 					if (my.debug){my.log("# wraping code in a script tag");}

@@ -230,8 +230,8 @@ function parseScriptsResource(scriptsResource)
 					res.scripts.push(script);
 				}
 				else {
-					if (/^(builtin|https?):/.test(script.js.trim()) && script.require){
-						res.error = "Scripts starting with builtin:/http(s): cannot use the 'require' directive.";
+					if (/^builtin:/.test(script.js.trim()) && script.require){
+						res.error = "Scripts starting with builtin: cannot use the 'require' directive.";
 						break;
 					}
 					if (! script.disable){

@@ -8,6 +8,7 @@ var my = {
 	scripts: [],
 	items: [],
 	modules: {},
+	cache: {},
 	//====================================================
     init : function(platformInfo) 
 	{
@@ -51,6 +52,7 @@ var my = {
 		my.debug = pref.printDebugInfo || false;
 		if (typeof pref.scriptsResource === "string"){
 			if (pref.scriptsResource !== my.scriptsResource){
+				my.cache = {};
 				let res = parseScriptsResource(pref.scriptsResource);
 				if (res.error){
 					my.scriptsResource = "";
@@ -161,51 +163,59 @@ var my = {
 		}
 	},
 	//====================================================
+	get: function (url){
+		if (url in my.cache){
+			return Promise.resolve(my.cache[url]);
+		}
+		return new Promise((resolve, reject)=>{
+			if (my.debug){my.log("# fetching " + url);}
+			fetch(url)
+			.then(res=>{
+				return res.ok ? res.text() : Promise.reject(res.status + ' ' + res.statusText);
+			})
+			.then(text=>{ resolve(my.cache[url] = text); })
+			.catch(err=>{ reject(err); });
+		});
+	},
+	//====================================================
 	executeScript: async function (itemIndex){
 		let s = my.items[itemIndex];
 		if (my.debug){my.log("# executing [" + s.name + "]");}
-		let code = s.js, options = s.options || {}, matches = s.matches || [];
+		let options = s.options || {}, matches = s.matches || [];
 		let details = Object.assign({}, options), showResultInTab;
-		if (/^builtin:.+/.test(code.trim())){
-			details.file = "builtin/" + code.trim().substring("builtin:".length) + ".js";
+		if (/^builtin:.+/.test(s.js.trim())){
+			details.file = "builtin/" + s.js.trim().substring("builtin:".length) + ".js";
 			if (my.debug){my.log("# using builtin script: " + details.file);}
 			showResultInTab = true;
 		}
-		else if (/^https?:/.test(code.trim())){
-			let src = code.trim().match(/^(https?:\S*)/)[1];
-			if (my.debug){my.log("# loading exteranl script using a script tag: " + src);}
-			let name = "_" + Math.random().toString().substring(2,10);
-			code = '(function(){'
-			+ 'let ' + name + ' = document.createElement("script");'
-			+ '' + name + '.src="' + src + '";'
-			+ 'document.documentElement.appendChild(' + name + '); ' + name + '.remove();'
-			+ '})()';
-			details.code = code;
-		}
 		else {
+			let code = "", url;
 			if (s.require){
-				let moduleCode = "";
 				for (let i = 0 ; i < s.require.length ; i++){
 					let moduleName = s.require[i];
-					if (! my.modules[moduleName]){
-						if (my.debug){my.log("# fetching module " + moduleName);}
+					if (/^https?:/.test(url = moduleName)){
 						try {
-							my.modules[moduleName] = await fetch(moduleName).then(res=>{
-								if (! res.ok){
-									throw Error(res.status + " " + res.statusText);
-								}
-								return res.text()
-							});
-							if (my.debug){my.log("# fetched successfully");}
+							code += await my.get(url) + "\n";
 						}
 						catch(err){
-							my.log("Error: " + err.message + " while fetching " + moduleName);
+							my.log("Error: " + err + " while fetching " + url);
 							return;
 						}
 					}
-					moduleCode += my.modules[moduleName] + "\n";
+					else { code += my.modules[moduleName] + "\n"; }
 				}
-				code = moduleCode + "\n" + code;
+			}
+			if (/^https?:/.test(url = s.js.trim())){
+				try {
+					code += await my.get(url) + "\n";
+				}
+				catch(err){
+					my.log("Error: " + err + " while fetching " + url);
+					return;
+				}
+			}
+			else {
+				code += s.js;
 			}
 			if (typeof details.wrapCodeInScriptTag !== "undefined"){
 				if (details.wrapCodeInScriptTag){

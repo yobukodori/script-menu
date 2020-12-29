@@ -52,7 +52,8 @@ Internally convert it to the following code and execute it.
         })();
         ```
   1. Simply write the URL and you can execute the script.  
-  The add-on itself reads the script from the URL and executes the loaded code.
+  The add-on itself reads the script from the URL and executes the loaded code.  
+  **[NOTE] If you want to access the variables/functions/objects, etc. created by the page script, specify wrapCodeInScriptTag in the //options section.**  
         ```
         //js  
         https://yobukodori.github.io/foo.js  

@@ -51,19 +51,11 @@ Internally convert it to the following code and execute it.
           alert("hello");
         })();
         ```
-  1. Simply write the URL and you can inject the script.  
+  1. Simply write the URL and you can execute the script.  
+  The add-on itself reads the script from the URL and executes the loaded code.
         ```
         //js  
         https://yobukodori.github.io/foo.js  
-        ```
-        Internally convert it to the following code and execute it.  
-        ```
-        (function() {  
-          let script = document.createElement("script");  
-          script.src = "https://yobukodori.github.io/foo.js";  
-          document.documentElement.appendChild(script);  
-          script.remove();  
-        })();  
         ```
   1. Prepared the following built-in scripts for Fenix.  
         ```

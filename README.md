@@ -43,6 +43,16 @@ Internally convert it to the following code and execute it.
           script.remove();  
         })();  
         ```
+        You can also use comment style or comma expression style so that it will not cause an error when executed as javascript.
+        ```
+        //options  
+        /* { "wrapCodeInScriptTag": true } */  
+        ```
+        or
+        ```
+        //options  
+        0, { "wrapCodeInScriptTag": true }
+        ```
   1. Finally, write the code with the //js directive.  
   **[NOTE] Doesn't check the syntax of the code, so please paste the code that has been tested to work.**  
         ```
@@ -91,10 +101,16 @@ Internally convert it to the following code and execute it.
 		//js
 		console.log(typeof $);
         ```
+  1. **//#include** preprocess-directive replaces this line with the contents of the file at the given url.
+        ```
+        //#include https://yobukodori.github.io/scrip-menu-item.js
+        ```
+        You can specify any part of the script resource as it is simply replaced before parsing.  
+        
   1. Other directives. (Optional)  
   **//disable**: disable this script. In case you don't use the script but want to keep it.  
   **//eof**: Ignore the lines that follow.    
-  **//[-=*;#]**: Comment line.    
+  **//[-=*;#]**: Comment line. Excluding **//#include**.   
         ```
         //name Obsolete script
         //disable

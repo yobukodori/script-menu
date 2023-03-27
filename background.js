@@ -37,7 +37,7 @@ var my = {
 		});
     },
 	//====================================================
-	updateSettings : function(pref)
+	updateSettings : async function(pref)
 	{
 		let prevInPageMenu = my.inPageMenu;
 		if ((my.inPageMenu = pref.inPageMenu || false) !== prevInPageMenu){
@@ -53,12 +53,13 @@ var my = {
 		if (typeof pref.scriptsResource === "string"){
 			if (pref.scriptsResource !== my.scriptsResource){
 				my.cache = {};
-				let res = parseScriptsResource(pref.scriptsResource);
+				let res = await parseScriptsResourceAsync(pref.scriptsResource, my.get);
 				if (res.error){
 					my.scriptsResource = "";
 					my.scripts = my.items = [];
 					my.modules = {};
-					my.log("Error" + (res.line > 0 ? " line " + res.line : "") + ": " + res.error);
+					let e = res.error;
+					my.log("Error: " + e.message + " at " + e.source + ":" + (e.line > 0 ? e.line : "n/a"));
 				}
 				else {
 					my.scriptsResource = pref.scriptsResource;
@@ -144,6 +145,12 @@ var my = {
 		else if (message.type === "executeScript"){
 			my.executeScript(message.itemIndex);
 		}
+		else if (message.type === "httpGet"){
+			my.get(message.url)
+			.then(text => sendResponse({ text }))
+			.catch(err => sendResponse({ error: "" + err }));
+			return true;
+		}
 	},
 	//====================================================
 	onDOMContentLoaded : function(details)
@@ -171,7 +178,7 @@ var my = {
 			if (my.debug){my.log("# fetching " + url);}
 			fetch(url)
 			.then(res=>{
-				return res.ok ? res.text() : Promise.reject(res.status + ' ' + res.statusText);
+				return res.ok ? res.text() : Promise.reject(res.status + ' ' + res.statusText + " while fetching " + url);
 			})
 			.then(text=>{ resolve(my.cache[url] = text); })
 			.catch(err=>{ reject(err); });
@@ -192,17 +199,19 @@ var my = {
 			let code = "", url;
 			if (s.require){
 				for (let i = 0 ; i < s.require.length ; i++){
-					let moduleName = s.require[i];
-					if (/^https?:/.test(url = moduleName)){
+					let moduleName = s.require[i], url = moduleName;
+					if (/^https?:/.test(url )){
 						try {
 							code += await my.get(url) + "\n";
 						}
 						catch(err){
-							my.log("Error: " + err + " while fetching " + url);
+							my.log("Error: " + err);
 							return;
 						}
 					}
-					else { code += my.modules[moduleName] + "\n"; }
+					else {
+						code += my.modules[moduleName] + "\n";
+					}
 				}
 			}
 			if (/^https?:/.test(url = s.js.trim())){
@@ -210,7 +219,7 @@ var my = {
 					code += await my.get(url) + "\n";
 				}
 				catch(err){
-					my.log("Error: " + err + " while fetching " + url);
+					my.log("Error: " + err);
 					return;
 				}
 			}

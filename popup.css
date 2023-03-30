@@ -6,7 +6,7 @@
 
 .item {
 	padding : 0.4em 0.5em;
-	cursor: default;
+	cursor: pointer;
 }
 
 .item:hover {

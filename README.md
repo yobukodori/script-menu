@@ -5,9 +5,10 @@
 ![screenshot](https://yobukodori.github.io/freedom/image/script-menu-screenshot-pc-menu.jpg)
 ### Script Menu is available on [AMO](https://addons.mozilla.org/firefox/addon/script-menu/).
 ### Usage
-![screenshot](https://yobukodori.github.io/freedom/image/script-menu-screenshot-pc-settings.jpg)
+![screenshot](https://user-images.githubusercontent.com/32874862/228820862-18963808-d879-4fb5-a841-801fdc20d454.jpg)
 - **Show menu in page**:  Show menu in page for quick access to the menu on Android.    
 - **Print debug info**:  Output debug information at the bottom of the Options tab.  
+- **Add line numbers**:  Add line numbers to script resource.  
 - **Script Resource**: Script to register in the menu..    
   1. Each script begins with the //name directive.  
 The //name directive specifies the script name to be displayed on the menu.  
@@ -129,6 +130,8 @@ Internally convert it to the following code and execute it.
         [todo]
         ...
         ```
+- **Go to line**: Move the cursor to the specified line.
+- **Go to Script...**: Move the cursor to the start of each script.
 - **Save**: Save settings and scripts resource. And apply settings and scripts.
 - **Apply**: Apply settings and scripts. (doesn't save).
 - **Get Status**: get current status and applied scripts.

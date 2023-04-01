@@ -113,7 +113,7 @@ function parseScriptsResource(scriptsResource)
 			required: true,
 			alt: "module",
 			has: "value",
-			followingDirectives: ["require", "disable", "matches", "exclude", "options", "js"],
+			followingDirectives: ["require", "disable", "matches", "exclude", "option", "options", "js"],
 		},
 		module: {
 			required: true,
@@ -124,7 +124,7 @@ function parseScriptsResource(scriptsResource)
 		require: {
 			has: "value",
 			type: "comma separated",
-			followingDirectives: ["disable", "exclude", "options", "js"],
+			followingDirectives: ["disable", "exclude", "option", "options", "js"],
 			onclose: function(val, line){
 				for (let i = 0 ; i < val.length ; i++){
 					let name = val[i];
@@ -140,17 +140,22 @@ function parseScriptsResource(scriptsResource)
 			},
 		},
 		disable: {
-			followingDirectives: ["require", "matches", "exclude", "options", "js"],
+			followingDirectives: ["require", "matches", "exclude", "option", "options", "js"],
 		},
 		matches: {
 			has: "value",
 			type: "comma separated",
-			followingDirectives: ["require", "disable", "exclude", "options", "js"],
+			followingDirectives: ["require", "disable", "exclude", "option", "options", "js"],
 		},
 		exclude: {
 			has: "value",
 			type: "comma separated",
-			followingDirectives: ["require", "disable", "matches", "options", "js"],
+			followingDirectives: ["require", "disable", "matches", "option", "options", "js"],
+		},
+		option: {
+			has: "value",
+			type: "comma separated",
+			followingDirectives: ["require", "disable", "matches", "exclude", "options", "js"],
 		},
 		options: {
 			has: "code",
@@ -191,21 +196,33 @@ function parseScriptsResource(scriptsResource)
 					}
 					json = json.slice(2, -2);
 				}
-				if (json.trim().length > 0){
-					try {
-						script[rule.name] = JSON.parse(json);
-					}
-					catch (e){
-						res.error = e.message;
+				let data;
+				try { data = json.length > 0 ? JSON.parse(json) : {}; }
+				catch (e){ res.error = e.message; --res.line; break; }
+				if (rule.name === "options"){
+					if (! (typeof data === "object" && ! Array.isArray(data))){
+						res.error = "//options requires {...} format JSON";
+						--res.line;
 						break;
 					}
 				}
-				else {
-					script[rule.name] = {};
-				}
+				script[rule.name] = data;
 			}
 			else if (rule.type === "comma separated"){
 				script[rule.name] = script[rule.name].split(',').map(e=>e.trim()).filter(e=>e.length > 0);
+				if (rule.name === "option"){
+					let options = {};
+					script[rule.name].forEach(k =>{
+						switch (k){
+							case "page": options.wrapCodeInScriptTag = true; break;
+							case "all": options.allFrames = true; break;
+							case "blank": options.matchAboutBlank = true; break;
+							default: res.error = `unknown option '${k}'`; --res.line;
+						}
+					});
+					if (res.error){ break; }
+					script.option = options;
+				}
 			}
 			if (rule.onclose){
 				res.error = rule.onclose(script[rule.name], res.line - 1);
@@ -248,6 +265,10 @@ function parseScriptsResource(scriptsResource)
 						res.items.push(script);
 						res.scripts.push(script);
 					}
+				}
+				if (script.option){
+					script.options = Object.assign(script.option, script.options || {});
+					delete script.option;
 				}
 				script.position.end = i + 1;
 				script = null;

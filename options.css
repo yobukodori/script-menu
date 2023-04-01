@@ -14,15 +14,23 @@ body{
 }
 
 body.pc {
-	font-size: large;
+	/* font-size: large; */
 }
 
 body.mobile {
 	font-size: 15px;
 }
 
-textarea {
-	font-size: inherit;
+.appInfo {
+	font-weight: bold;
+}
+
+#appIcon {
+	height: 1.2em;
+}
+
+#appVer {
+	margin-left: 0.5em;
 }
 
 button {
@@ -43,6 +51,16 @@ input[type="text"] {
 .text-box .header {
 	display: flex;
 	justify-content: space-between;
+}
+
+textarea.pc {
+	font-size: 18px;
+	line-height: 22px;
+}
+
+textarea.mobile {
+	font-size: 15px;
+	line-height: 19px;
 }
 
 #scriptsResource {

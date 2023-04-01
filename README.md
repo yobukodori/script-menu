@@ -5,7 +5,7 @@
 ![screenshot](https://yobukodori.github.io/freedom/image/script-menu-screenshot-pc-menu.jpg)
 ### Script Menu is available on [AMO](https://addons.mozilla.org/firefox/addon/script-menu/).
 ### Usage
-![screenshot](https://user-images.githubusercontent.com/32874862/228820862-18963808-d879-4fb5-a841-801fdc20d454.jpg)
+![screenshot](https://user-images.githubusercontent.com/32874862/229290932-3442accc-0401-478d-b818-2adc538c2bda.jpg)
 - **Show menu in page**:  Show menu in page for quick access to the menu on Android.    
 - **Print debug info**:  Output debug information at the bottom of the Options tab.  
 - **Add line numbers**:  Add line numbers to script resource.  
@@ -24,7 +24,13 @@ The //name directive specifies the script name to be displayed on the menu.
         ```
         //exclude https//yobukodori.github.io/*, https//github.com/yobukodori/*
         ```
-  1. Next, use the //options directive to set [details](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/tabs/executeScript). (Optional)  
+  1. The //option directive specifies a comma-separated list of tokens. The following three tokens are available.  
+   `//option page, all, blank`
+  - **page**: Sets true to `wrapCodeInScriptTag`.
+  - **all**: Sets true to `allFrames`.
+  - **blank**: Sets true to `matchAboutBlank`.
+  See the following //options directive for options.
+  1. The //options directive sets [details](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/tabs/executeScript). (Optional)  
         ```
         //options  
         {  

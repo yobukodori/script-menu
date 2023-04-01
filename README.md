@@ -25,11 +25,11 @@ The //name directive specifies the script name to be displayed on the menu.
         //exclude https//yobukodori.github.io/*, https//github.com/yobukodori/*
         ```
   1. The //option directive specifies a comma-separated list of tokens. The following three tokens are available.  
-   `//option page, all, blank`
-  - **page**: Sets true to `wrapCodeInScriptTag`.
-  - **all**: Sets true to `allFrames`.
-  - **blank**: Sets true to `matchAboutBlank`.
-  See the following //options directive for options.
+    `//option page, all, blank`  
+     **page**: Sets true to `wrapCodeInScriptTag`.  
+     **all**: Sets true to `allFrames`.  
+     **blank**: Sets true to `matchAboutBlank`.  
+    See the following //options directive for options.  
   1. The //options directive sets [details](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/tabs/executeScript). (Optional)  
         ```
         //options  

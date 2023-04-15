@@ -1,7 +1,7 @@
 {
 	"manifest_version" : 2,
 	"name": "Script Menu",
-	"version": "0.2.8",
+	"version": "0.2.9",
 	"author": "yobukodori",
 	"description": "Select and run the registered JavaScript from the menu.",
 

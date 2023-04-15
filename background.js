@@ -226,23 +226,23 @@ var my = {
 			else {
 				code += s.js;
 			}
-			if (typeof details.wrapCodeInScriptTag !== "undefined"){
-				if (details.wrapCodeInScriptTag){
-					if (my.debug){my.log("# wraping code in a script tag");}
-					let name = "_" + Math.random().toString().substring(2,10);
-					code = '(function(){'
-					+ 'let ' + name + ' = document.createElement("script");'
-					+ '' + name + '.appendChild(document.createTextNode(' + JSON.stringify(code) + '));'
-					+ 'document.documentElement.appendChild(' + name + '); ' + name + '.remove();'
-					+ '})()';
+			if (details.wrapCodeInScriptTag){
+				if (my.debug){my.log("# wraping code in a script tag");}
+				let stringifiedCode = JSON.stringify(code);
+				code = '(function(){ '
+					+ 'let e = document.createElement("script"); '
+					+ 'e.append(' + stringifiedCode + '); ';
+				if (details.nonce){
+					code += 'e.nonce = (Array.from(document.scripts).find(e => e.nonce) || {}).nonce; ';
 				}
-				if (my.debug){my.log("# deleting details.wrapCodeInScriptTag");}
+				code += 'document.documentElement.appendChild(e); '
+					+ 'e.remove(); '
+					+ '})()';
 			}
 			details.code = code;
 		}
-		if (typeof details.wrapCodeInScriptTag !== "undefined"){
-			delete details.wrapCodeInScriptTag;
-		}
+		delete details.wrapCodeInScriptTag;
+		delete details.nonce;
 		try {
 			browser.tabs.executeScript(details)
 			.then(value=>{

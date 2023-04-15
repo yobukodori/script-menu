@@ -214,6 +214,7 @@ function parseScriptsResource(scriptsResource)
 					let options = {};
 					script[rule.name].forEach(k =>{
 						switch (k){
+							case "nonce": options.nonce = true;
 							case "page": options.wrapCodeInScriptTag = true; break;
 							case "all": options.allFrames = true; break;
 							case "blank": options.matchAboutBlank = true; break;

@@ -26,6 +26,7 @@ The //name directive specifies the script name to be displayed on the menu.
         ```
   1. The //option directive specifies a comma-separated list of tokens. The following three tokens are available.  
     `//option page, all, blank`  
+     **nonce**: Sets `true` to `wrapCodeInScriptTag` and `nonce`.  
      **page**: Sets true to `wrapCodeInScriptTag`.  
      **all**: Sets true to `allFrames`.  
      **blank**: Sets true to `matchAboutBlank`.  
@@ -42,13 +43,27 @@ The //name directive specifies the script name to be displayed on the menu.
 Internally convert it to the following code and execute it.  
         ```
         (function() {  
-          let script = document.createElement("script");  
-          script.appendChild(document.createTextNode("("+function(){  
-            // your code  
-          }+")();"));  
-          document.documentElement.appendChild(script);  
-          script.remove();  
+          let e = document.createElement("script");
+          e.append(<your code>);
+          e.nonce = <nonce value>; // Set if nonce option is true.
+          document.documentElement.appendChild(e); 
+          e.remove();
         })();  
+        ```
+        **nonce** option is used with **wrapCodeInScriptTag** to set the nonce attribute on the script tag.  
+		For example, `twitter.com` restricts script execution with Content Security Policy nonce-source. To run code in the context of a page script:  
+        ```
+        //name xhr logger
+        //matches *://twitter.com/*
+        //; The next option should be 'nonce'. Specifying 'page' will fail.
+        //option nonce
+        //js
+        XMLHttpRequest.prototype.open = new Proxy(XMLHttpRequest.prototype.open, {
+            apply: function(target, thisArg, args ) {
+                console.log(args[0], args[1]);
+                return Reflect.apply(target, thisArg, args);
+            }
+        });
         ```
         You can also use comment style or comma expression style so that it will not cause an error when executed as javascript.
         ```

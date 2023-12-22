@@ -9,7 +9,8 @@
 - **Show menu in page**:  Show menu in page for quick access to the menu on Android.    
 - **Print debug info**:  Output debug information at the bottom of the Options tab.  
 - **Add line numbers**:  Add line numbers to script resource.  
-- **Script Resource**: Script to register in the menu..    
+- **Script Resource**: Script to register in the menu.    
+  1. Script Resource must not begin with a non-directive line, such as a blank line. Always start with a specific directive line.  
   1. Each script begins with the //name directive.  
 The //name directive specifies the script name to be displayed on the menu.  
         ```

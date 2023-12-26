@@ -1,5 +1,5 @@
 # Script Menu - firefox extension
-## Select and run the registered JavaScript from the menu. Using browser.tabs.executeScript API.
+## Select and run the registered JavaScript (userscript) from the menu. Using browser.tabs.executeScript API.
 ## I created this extension to make it easier to run JavaScript on firefox for mobile, which does not have a bookmarklet available.
 ## 登録したJavaScritをメニューから選択して実行するFirefox拡張機能。tabs.executeScript APIを使用します。
 ![screenshot](https://yobukodori.github.io/freedom/image/script-menu-screenshot-pc-menu.jpg)

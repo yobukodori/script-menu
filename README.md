@@ -5,10 +5,11 @@
 ![screenshot](https://yobukodori.github.io/freedom/image/script-menu-screenshot-pc-menu.jpg)
 ### Script Menu is available on [AMO](https://addons.mozilla.org/firefox/addon/script-menu/).
 ### Usage
-![screenshot](https://user-images.githubusercontent.com/32874862/229290932-3442accc-0401-478d-b818-2adc538c2bda.jpg)
+![screenshot]![screenshot](https://yobukodori.github.io/freedom/image/script-menu-screenshot-pc-settings.jpg)
 - **Show menu in page**:  Show menu in page for quick access to the menu on Android.    
 - **Print debug info**:  Output debug information at the bottom of the Options tab.  
 - **Add line numbers**:  Add line numbers to script resource.  
+- **Theme**: Select a color theme for the settings page.  As soon as you select a theme, it will be reflected in the settings page, but only temporarily. Apply or Save as needed.
 - **Script Resource**: Script to register in the menu.    
   1. Script Resource must not begin with a non-directive line, such as a blank line. Always start with a specific directive line.  
   1. Each script begins with the //name directive.  
@@ -153,7 +154,10 @@ Internally convert it to the following code and execute it.
         ...
         ```
 - **Go to line**: Move the cursor to the specified line.
-- **Go to Script...**: Move the cursor to the start of each script.
+- **Go to script**: Move the cursor to the start of each script.
+- **Select script**: Select a code range for each script.
 - **Save**: Save settings and scripts resource. And apply settings and scripts.
 - **Apply**: Apply settings and scripts. (doesn't save).
 - **Get Status**: get current status and applied scripts.
+- **Export Settings**: Export settings to the file. It is the currently applied settings that are exported, not the saved settings.
+- **Import Settings**: Import and apply settings from the file. Do not save.

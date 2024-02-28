@@ -2,6 +2,7 @@ var my = {
 	os : "n/a", // mac|win|android|cros|linux|openbsd
 	defaultTitle: "Script Menu",
 	initialized: null,
+	settings: {},
 	debug: false,
 	inPageMenu: false,
 	scriptsResource: "",
@@ -22,7 +23,7 @@ var my = {
 
 				browser.runtime.onMessage.addListener(my.onMessage);
 				
-				browser.storage.local.get(["inPageMenu", "printDebugInfo", "scriptsResource"])
+				browser.storage.local.get(["inPageMenu", "printDebugInfo", "addLineNumbers", "colorScheme", "scriptsResource"])
 				.then((pref) => {
 					my.updateSettings(pref);
 					resolve();
@@ -39,6 +40,7 @@ var my = {
 	//====================================================
 	updateSettings : async function(pref)
 	{
+		my.settings = pref;
 		let prevInPageMenu = my.inPageMenu;
 		if ((my.inPageMenu = pref.inPageMenu || false) !== prevInPageMenu){
 			if (my.inPageMenu){
@@ -118,6 +120,8 @@ var my = {
 					sendResponse({
 						inPageMenu: my.inPageMenu,
 						printDebugInfo: my.debug,
+						addLineNumbers: my.settings.addLineNumbers,
+						colorScheme: my.settings.colorScheme,
 						scriptsResource: my.scriptsResource
 					});
 				})

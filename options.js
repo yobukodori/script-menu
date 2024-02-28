@@ -23,6 +23,32 @@ function alert(msg){
 	e.appendChild(m);
 }
 
+function inform(msg, opts){
+	opts = opts || {};
+	const id = "inform";
+	let e = document.getElementById(id);
+	e && e.remove();
+	e = document.createElement("div");
+	e.id = id;
+	setTimeout(function(e){
+		document.addEventListener("click", function handler(ev){
+			document.removeEventListener("click", handler);
+			e.remove(); 
+		});
+	}, 0, e);
+	Object.keys(opts).forEach(k => e.style[k] = opts[k]);
+	document.body.appendChild(e);
+	let m = document.createElement("div");
+	m.classList.add("message");
+	msg.split("\n").forEach((line,i) =>{
+		if (i > 0){ m.appendChild(document.createElement("br")); }
+		let span = document.createElement("span");
+		span.appendChild(document.createTextNode(line));
+		m.appendChild(span);
+	});
+	e.appendChild(m);
+}
+
 function clearLog()
 {
 	let log = document.querySelector('#log');
@@ -47,7 +73,7 @@ function log(s)
 	if (! (s = s.replace(/\s+$/, ""))){
 		return;
 	}
-	let className = /^error\b/i.test(s) ? "error" : /^warning\b/i.test(s) ? "warning" : "";
+	let className = /^[a-z]*error\b/i.test(s) ? "error" : /^warning\b/i.test(s) ? "warning" : "";
 	let a = s.split("\n");
 	for (let i = a.length - 1 ; i >= 0 ; i--){
 		let s = a[i].replace(/\s+$/, "");
@@ -64,16 +90,18 @@ function log(s)
 	}
 }
 
-function goToLine(line){
+function goToLine(line, endLine){
 	const ta = document.querySelector('#scriptsResource');
-	let start = 0;
-	if (line > 1){
-		for (let ar = ta.value.split("\n"), i = 0 ; i < ar.length ; i++){
-			start += ar[i].length + 1;
-			if (i + 2 === line){ break; }
+	let start = 0, end = start;
+	if (line > 1 || endLine !== line){
+		for (let ar = ta.value.split("\n"), pos = 0, i = 0 ; i < ar.length ; i++){
+			pos += ar[i].length + 1;
+			if (i + 2 === line){ start = pos; }
+			if (i + 2 === endLine){ end = pos; }
+			if (end){ break; }
 		}
 	}
-	ta.selectionStart = start, ta.selectionEnd = start;
+	ta.selectionStart = start, ta.selectionEnd = end;
 	const computeLineHeight = function(){
 		return getComputedStyle(ta).lineHeight.slice(0, -2) * 1;
 	}
@@ -81,7 +109,7 @@ function goToLine(line){
 	ta.focus();
 }
 
-function goToScript(){
+function goToScript(fSelect){
 	let scriptsResource = document.querySelector('#scriptsResource').value;
 	if (! /\S/.test(scriptsResource)){
 		scriptsResource = "";
@@ -101,7 +129,14 @@ function goToScript(){
 	}
 	let modal = document.createElement("div");
 	modal.classList.add("go-to-script-modal");
-	modal.insertAdjacentHTML("beforeend", `<div class="title"><span>Go to script</span><button class="close">X</button></div><div class="container"></div>`);
+	if ("avoid AMO warnikg"){
+		//modal.insertAdjacentHTML("beforeend", `<div class="title"><span>${fSelect ? "Select" : "Go to"} script</span><button class="close">X</button></div><div class="container"></div>`);
+		let div, e;
+		div = document.createElement("div"), div.classList.add("title"), modal.append(div);
+		e = document.createElement("span"), e.textContent = (fSelect ? "Select" : "Go to") + " script", div.append(e);
+		e = document.createElement("button"), e.classList.add("close"), e.textContent = "X", div.append(e);
+		div = document.createElement("div"), div.classList.add("container"), modal.append(div);
+	}
 	modal.querySelector('button.close').addEventListener("click", e =>{
 		modal.remove();
 	});
@@ -110,9 +145,14 @@ function goToScript(){
 	res.scripts.forEach((s, i)=>{
 		let e = document.createElement("div");
 		e.classList.add("item");
-		e.textContent = "line " + s.position.start + ": " + s.name;
+		e.textContent = (fSelect ? "" : "line " + s.position.start + ": ") + s.name;
 		e.addEventListener("click", ev =>{
-			goToLine(s.position.start);
+			goToLine(s.position.start, fSelect ? s.position.end : s.position.start);
+			if (fSelect){
+				let b = document.body.getBoundingClientRect(), 
+					r = document.querySelector('#scriptsResource').getBoundingClientRect();
+				inform("Selected " + s.name, {position: "absolute", top: r.top + "px", right: (b.right - r.right + 5) + "px"});
+			}
 		});
 		container.append(e);
 	});
@@ -162,6 +202,7 @@ async function applySettings(fSave)
 		inPageMenu : document.querySelector('#inPageMenu').checked,
 		printDebugInfo : document.querySelector('#printDebugInfo').checked,
 		addLineNumbers: document.querySelector('#addLineNumbers').checked,
+		colorScheme: document.querySelector('#colorScheme').value,
 		scriptsResource : scriptsResource
 	};
 	if (itemCount === 0){
@@ -211,6 +252,27 @@ function getBackgroundStatus()
 	});
 }
 
+function setupSettings(v){
+	const addLineNumbers = document.querySelector('#addLineNumbers'),
+		colorScheme = document.querySelector('#colorScheme'),
+		scriptsResource = document.querySelector('#scriptsResource');
+	textareaAddLineNumbers(scriptsResource, false);
+	document.querySelector('#inPageMenu').checked = !! v.inPageMenu;
+	document.querySelector('#printDebugInfo').checked = !! v.printDebugInfo;
+	addLineNumbers.checked = !! v.addLineNumbers;
+	colorScheme.value = ["light", "dark"].includes(v.colorScheme) ? v.colorScheme : "auto";
+	scriptsResource.value = v.scriptsResource || "";
+	setupColorScheme(colorScheme.value);
+	textareaAddLineNumbers(scriptsResource, addLineNumbers.checked);
+}
+
+function redrawLineNumber(ta){
+	const d = { selectionStart: ta.selectionStart, selectionEnd: ta.selectionEnd, scrollTop: ta.scrollTop };
+	textareaAddLineNumbers(ta, false);
+	textareaAddLineNumbers(scriptsResource, true);
+	ta.selectionStart = d.selectionStart, ta.selectionEnd = d.selectionEnd, ta.scrollTop = d.scrollTop;
+}
+
 function onDOMContentLoaded(platformInfo){
 	let os = platformInfo.os, is_mobile = os === "android", is_pc = ! is_mobile;
 	
@@ -220,6 +282,21 @@ function onDOMContentLoaded(platformInfo){
 	document.querySelector('#appName').textContent = appName;
 	document.querySelector('#appVer').textContent = appVer;
 
+	const scriptsResource = document.getElementById("scriptsResource");
+
+	const addLineNumbers = document.querySelector('#addLineNumbers');
+	addLineNumbers.addEventListener("change", ev =>{
+		textareaAddLineNumbers(scriptsResource, addLineNumbers.checked);
+	});
+
+	const colorScheme = document.querySelector('#colorScheme');
+	colorScheme.addEventListener('change', ev =>{
+		setupColorScheme(ev.target.value);
+		if (addLineNumbers.checked){
+			redrawLineNumber(scriptsResource);
+		}
+	});
+
 	document.querySelector('#goToLine').addEventListener('click', ev=>{
 		ev.stopPropagation();
 		let line = parseInt(document.querySelector('#lineNumber').value);
@@ -227,7 +304,7 @@ function onDOMContentLoaded(platformInfo){
 			alert("invalid line number");
 			return;
 		}
-		goToLine(line);
+		goToLine(line, line);
 	});
 	document.querySelector('#lineNumber').addEventListener('keyup', ev =>{
 		if (ev.key == 'Enter') {
@@ -242,6 +319,10 @@ function onDOMContentLoaded(platformInfo){
 		ev.stopPropagation();
 		goToScript();
 	});
+	document.querySelector('#selectScript').addEventListener('click', ev=>{
+		ev.stopPropagation();
+		goToScript(true /* fSelect: true */);
+	});
 	document.querySelector('#save').addEventListener('click', ev=>{
 		applySettings(true);
 	});
@@ -255,11 +336,67 @@ function onDOMContentLoaded(platformInfo){
 		clearLog();
 	});
 
+	document.querySelector('#exportSettings').addEventListener('click', ev=>{
+		browser.runtime.sendMessage({type: "getSettings"})
+		.then(v=>{
+			if (v.error){
+				alert("Error on getSettings: " + v.error);
+			}
+			else {
+				const date2str = function(){
+					const f = n => ("0" + n).slice(-2);
+					let d = new Date();
+					return d.getFullYear() + f(d.getMonth() + 1) + f(d.getDate()) + "-" + f(d.getHours()) + f(d.getMinutes()) + f(d.getSeconds());
+				};
+				let man = browser.runtime.getManifest(), 
+					appName = man.name,
+					appVer = "v." + man.version;
+				v.app = appName + " " + appVer;
+				let settingsData = JSON.stringify(v);
+				let e = document.createElement("a");
+				e.href = URL.createObjectURL(new Blob([settingsData], {type:"application/json"}));
+				e.download = appName.toLowerCase().replace(/\s/g, "-") + "-" + date2str() + ".json";
+				e.click();
+			}
+		})
+		.catch(err=>{
+			alert("Error on sendMessage('getSettings'): " + err);
+		});
+	});
+
+	document.querySelector('#importSettings').addEventListener('click', ev=>{
+		let e = document.createElement("input");
+		e.type = "file";
+		e.accept = "application/json";
+		e.addEventListener("change", ev =>{
+			let file = ev.target?.files[0];
+			if (file){
+				const reader = new FileReader();
+				reader.addEventListener("load", ev =>{
+					try {
+						const v = JSON.parse(reader.result);
+						if (! v?.app?.startsWith(appName)){
+							throw Error("invalid settings data");
+						}
+						setupSettings(v);
+						applySettings();
+						log("Settings data successfully imported.");
+					}
+					catch (e){
+						const msg = e.name + ": " + e.message;
+						log(msg), alert(msg);
+					}
+				});
+				reader.readAsText(file);
+			}
+		});
+		e.click();
+	});
+
 	document.querySelectorAll("body, input, textarea, button, #log").forEach(e=>{
 		e.classList.add(is_pc ? "pc" : "mobile");
 	});
 
-	const scriptsResource = document.getElementById("scriptsResource");
 	scriptsResource.placeholder = ''
 		+ '//name Go top\n'
 		+ '//js\n'
@@ -274,19 +411,6 @@ function onDOMContentLoaded(platformInfo){
 		;
 	textareaTabKeyToIndent(scriptsResource);
 	
-	const addLineNumbers = document.querySelector('#addLineNumbers');
-	browser.storage.local.get(["addLineNumbers"])
-	.then((pref) => {
-		addLineNumbers.checked = pref.addLineNumbers || false
-		addLineNumbers.checked && textareaAddLineNumbers(scriptsResource, true);
-	})
-	.catch(err=>{
-		alert("Error (storage.local.get): " + e);
-	});
-	addLineNumbers.addEventListener("change", ev =>{
-		textareaAddLineNumbers(scriptsResource, addLineNumbers.checked);
-	});
-
 	getBackgroundStatus();
 
 	browser.runtime.sendMessage({type: "getSettings"})
@@ -295,9 +419,15 @@ function onDOMContentLoaded(platformInfo){
 			alert("Error on getSettings: " + v.error);
 		}
 		else {
-			document.querySelector('#inPageMenu').checked = v.inPageMenu;
-			document.querySelector('#printDebugInfo').checked = v.printDebugInfo;
-			document.querySelector('#scriptsResource').value = v.scriptsResource;
+			setupSettings(v);
+			window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ev=>{
+				onPrefersColorSchemeDarkChange(ev);
+				if (colorScheme.value === "auto"){
+					if (addLineNumbers.checked){
+						redrawLineNumber(scriptsResource);
+					}
+				}
+			});
 		}
 	})
 	.catch(err=>{

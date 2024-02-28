@@ -1,3 +1,23 @@
+const utilData = {};
+
+function onPrefersColorSchemeDarkChange(ev){
+	if (utilData.colorScheme === "auto"){
+		document.body.classList[ev.matches ? "add" : "remove"]("dark-mode");
+	}
+}
+
+function setupColorScheme(colorScheme){
+	utilData.colorScheme = colorScheme;
+	if (colorScheme === "auto"){
+		document.body.style.colorScheme = "light dark";
+		document.body.classList[window.matchMedia("(prefers-color-scheme: dark)").matches ? "add" : "remove"]("dark-mode");
+	}
+	else {
+		document.body.style.colorScheme = colorScheme;
+		document.body.classList[colorScheme === "dark" ? "add" : "remove"]("dark-mode");
+	}
+}
+
 function convertMatchPatternToRegExpLiteral(pattern){
 	if (pattern === "<all_urls>"){
 		return new RegExp("^((https?|wss?|ftps?|data)://[^/]+|file://[^/]*)/.*");
